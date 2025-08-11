@@ -3,15 +3,15 @@
 
 # ---------- CPU USAGE (lightweight, /proc/stat) ----------
 cpu_usage() {
-  read -r cpu a b c d idle rest </proc/stat
-  idle0=$((idle + 0))
-  total0=$((a + b + c + d + idle + ${rest// /+}))
+  read -r cpu u n s id io irq sirq st _ </proc/stat
+  idle0=$((id + io))
+  total0=$((u + n + s + id + io + irq + sirq + st))
   sleep 0.5
-  read -r cpu a b c d idle rest </proc/stat
-  idle1=$((idle + 0))
-  total1=$((a + b + c + d + idle + ${rest// /+}))
-  local didle=$((idle1 - idle0))
-  local dtotal=$((total1 - total0))
+  read -r cpu u n s id io irq sirq st _ </proc/stat
+  idle1=$((id + io))
+  total1=$((u + n + s + id + io + irq + sirq + st))
+  didle=$((idle1 - idle0))
+  dtotal=$((total1 - total0))
   awk -v dI="$didle" -v dT="$dtotal" 'BEGIN { printf "%.0f", (1 - dI/dT) * 100 }'
 }
 
@@ -116,6 +116,7 @@ ram_usage() {
 }
 
 # ----- DISK USAGE -----
+DISK_MOUNT="/"
 disk_usage() {
   read -r size used _ <<<"$(df -BG --output=size,used "$DISK_MOUNT" | tail -n 1)"
   echo "${used}/${size}"
@@ -130,6 +131,6 @@ IFS='|' read -r GPU_PCT GPU_TMP <<<"$(gpu_info)"
 [[ -z "$GPU_TMP" ]] && GPU_TMP="--"
 
 RAM_STR=$(ram_usage)
-DISK_STR=${disk_usage}
+DISK_STR=$(disk_usage)
 
 echo "CPU: ${CPU_PCT}% ${CPU_TMP}°C | GPU: ${GPU_PCT}% ${GPU_TMP}°C | RAM: ${RAM_STR} | Disk: ${DISK_STR}"
